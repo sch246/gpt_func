@@ -72,7 +72,7 @@ try:
         line = input()
         if line == "'''":
             hold = not hold
-            line = '\n'.join(lines)
+            line = '\n'.join(lines[1:])
             lines = []
         if hold:
             lines.append(line)
