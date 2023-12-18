@@ -110,7 +110,7 @@ class Chat:
         :param settings: The setting string described in natural language.
         :return: self
         """
-        self.settings = [{'role':'system','content':settings}]
+        self.settings = [pprint({'role':'system','content':settings})]
         return self
 
     def add_tool(self, call: Callable, name: str = None) -> None:

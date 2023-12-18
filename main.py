@@ -60,6 +60,8 @@ print("Enter to confirm")
 print("type ''' or \"\"\" to input muti lines")
 print()
 
+chat.set_settings("Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous.")
+
 hold = False
 lines = []
 print('> ',end='',flush=True)
