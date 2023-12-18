@@ -31,7 +31,7 @@ class MessageStream:
             if delta.tool_calls is None:
                 raise StopIteration
             delta_text = delta.tool_calls[0].function.arguments
-            self.msg.tool_calls[0].function.arguments += delta
+            self.msg.tool_calls[0].function.arguments += delta_text
             return delta_text
         else:
             if delta.content is None:
