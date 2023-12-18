@@ -82,7 +82,8 @@ def pprint(message:dict | ChatCompletionMessage | MessageStream):
         if role == "system":
             print(colored(f"system: {content}\n", role_to_color[role]))
         elif role == "user":
-            print(colored(f"user: {content}\n", role_to_color[role]))
+            pass
+            # print(colored(f"user: {content}\n", role_to_color[role]))
         elif role == "assistant" and tool_calls:
             print(colored(f"assistant called: {show_tool_calls(tool_calls)}\n", "yellow"))
         elif role == "assistant" and not tool_calls:
