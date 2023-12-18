@@ -50,7 +50,7 @@ def exec_code(code:str, expr:str):
         return traceback.format_exc()
 
 
-# chat.add_tool(get_current_weather)
+chat.add_tool(get_current_weather)
 # chat.add_tool(get_location)
 # chat.add_tool(exec_code)
 
@@ -76,10 +76,9 @@ try:
             lines = []
         if hold:
             lines.append(line)
-            # print('- ',end='',flush=True)
-        else:
-            print('\033[0m')
-            chat.call({'role':'user','content':line})
-            print('\033[32muser: ',end='',flush=True)
+            continue
+        print('\033[0m')
+        chat.call({'role':'user','content':line})
+        print('\033[32muser: ',end='',flush=True)
 except KeyboardInterrupt:
     print('\033[0m\nbye')
