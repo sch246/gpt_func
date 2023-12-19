@@ -1,12 +1,17 @@
-
-import json
-from typing import Callable
+import inspect
+import httpx
 from typing import Callable, List, Dict
-from tenacity import retry, wait_random_exponential, stop_after_attempt
-from termcolor import colored
-from openai import OpenAI, Stream
+from openai import Stream, resources
+from openai._client import OpenAIWithRawResponse
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
+
+import json
+import traceback
+from dotenv import load_dotenv
+from tenacity import retry, wait_random_exponential, stop_after_attempt
+from termcolor import colored
+from openai import OpenAI
 
 from tool import Tool
 
@@ -96,22 +101,56 @@ def pprint(message:dict | ChatCompletionMessage | MessageStream):
 
 
 
-class Chat:
-    def __init__(self, client, settings=None, model: str = "gpt-4-1106-preview") -> None:
-        self.client: OpenAI = client
-        self.model: str = model
-        self.tools: Dict[str, Tool] = {}
-        self.messages: List[dict] = []
-        self.settings = [{'role':'system','content':settings}] if settings is not None else []
+class Chat(OpenAI):
+    completions: resources.Completions
+    chat: resources.Chat
+    edits: resources.Edits
+    embeddings: resources.Embeddings
+    files: resources.Files
+    images: resources.Images
+    audio: resources.Audio
+    moderations: resources.Moderations
+    models: resources.Models
+    fine_tuning: resources.FineTuning
+    fine_tunes: resources.FineTunes
+    beta: resources.Beta
+    with_raw_response: OpenAIWithRawResponse
 
-    def set_settings(self, settings:str):
+    # client options
+    api_key: str
+    organization: str | None
+
+    model: str
+    tools: Dict[str, Tool]
+    messages: List[Dict]
+    settings: List[Dict]
+    def __init__(self,
+            model: str = "gpt-4-1106-preview",
+            settings:List[str|Callable]=[],
+            api_key: str | None = None,
+            base_url: str | httpx.URL | None = None,
+            **kws,
+            ) -> None:
+        load_dotenv()  # load environment variables from .env file
+        super().__init__(api_key=api_key,base_url=base_url,**kws)
+
+        self.model = model
+        self.tools = {}
+        self.messages = []
+
+        self.set_settings(settings)
+
+    def set_settings(self, settings:List[str|Callable]=[]):
         """
         set settings for AI
 
         :param settings: The setting string described in natural language.
         :return: self
         """
-        self.settings = [pprint({'role':'system','content':settings})]
+        for setting in settings:
+            if isinstance(setting, str):
+                pprint({'role':'system','content':setting})
+        self.settings = settings
         return self
 
     def add_tool(self, call: Callable, name: str = None) -> None:
@@ -171,17 +210,21 @@ class Chat:
         while tool_calls:
             for tool_call in tool_calls:
                 function_name = tool_call.function.name
+                try:
+                    content = self.tools[function_name].call(**json.loads(tool_call.function.arguments))
+                except:
+                    content =f'called: {json.loads(tool_call.function.arguments)}\n\n'+ traceback.format_exc()
                 self.add({
                     "role": "tool",
                     "name": function_name,
-                    "content": self.tools[function_name].call(**json.loads(tool_call.function.arguments)),
+                    "content": content,
                     "tool_call_id": tool_call.id,
                 })
             res_msg = self.add(self.req(tools, tool_choice, model))
             tool_calls = res_msg.tool_calls
         return res_msg
 
-    @retry(wait=wait_random_exponential(multiplier=1, max=40), stop=stop_after_attempt(3))
+    # @retry(wait=wait_random_exponential(multiplier=1, max=40), stop=stop_after_attempt(3))
     def req(self, tools: List[str] = None, tool_choice: str = 'auto', model: str = None) -> MessageStream:
         """
         Make a request to the chat model with streaming.
@@ -191,11 +234,19 @@ class Chat:
         :param model: The model to use, defaults to the class model.
         :return: The chat Stream.
         """
-        messages = self.settings + self.messages
+        messages = []
+        for s in self.settings:
+            if isinstance(s, Callable):
+                s = s(self)
+                if s:
+                    pprint({'role':'system','content':s})
+            if s:
+                messages.append({'role':'system','content':s})
+        messages += self.messages
         tools = tools if tools is not None else [v.description for v in self.tools.values()]
         model = model if model is not None else self.model
         if tools:
-            return MessageStream(self.client.chat.completions.create(
+            return MessageStream(self.chat.completions.create(
                 model=model,
                 messages=messages,
                 tools=tools,
@@ -203,7 +254,7 @@ class Chat:
                 stream=True  # 开启流式响应
             ))
         else:
-            return MessageStream(self.client.chat.completions.create(
+            return MessageStream(self.chat.completions.create(
                 model=model,
                 messages=messages,
                 stream=True
@@ -211,16 +262,8 @@ class Chat:
 
 
 if __name__=='__main__':
-    import os
-    from dotenv import load_dotenv
-    load_dotenv()  # load environment variables from .env file
-    api_key = os.getenv('OPENAI_API_KEY')
-    base_url = os.getenv('OPENAI_BASE_URL')
-
-    GPT_MODEL = "gpt-4-1106-preview"
-    client = OpenAI(api_key=api_key,base_url=base_url)
-    chat = Chat(client,GPT_MODEL)
-    chat.add({"role": "system", "content": "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."})
+    chat = Chat()
+    chat.set_settings(["Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."])
     chat.add({'role':'user','content':'awa'})
     print(chat.add(chat.req()))
     print(chat.call({'role':'user','content':'nothing.'}))

@@ -1,21 +1,10 @@
-from bs4 import BeautifulSoup
-from openai import OpenAI
-import requests
+import json
 import traceback
-from dotenv import load_dotenv
-import os
 
 from chat import Chat
 
-load_dotenv()  # load environment variables from .env file
-api_key = os.getenv('OPENAI_API_KEY')
-base_url = os.getenv('OPENAI_BASE_URL')
 
-
-GPT_MODEL = "gpt-3.5-turbe"
-client = OpenAI(api_key=api_key,base_url=base_url)
-
-chat = Chat(client,GPT_MODEL)
+chat = Chat()
 
 def get_current_weather(location:str, format:str='celsius'):
     '''
@@ -26,7 +15,7 @@ def get_current_weather(location:str, format:str='celsius'):
     format: The temperature unit to use. Infer this from the users location.
         enum: ["celsius", "fahrenheit"]
     '''
-    return "晴 20~25"
+    return "晴 -20~-10"
 
 def get_location():
     '''
@@ -34,25 +23,33 @@ def get_location():
     '''
     return "beijing"
 
+from bs4 import BeautifulSoup
+import requests
 def exec_code(code:str, expr:str):
     '''
-    execute a python code. BeautifulSoup and requests are imported. return exception message when an exception is encountered
+    execute a python code. BeautifulSoup and requests are imported. 你应该可以用python读取和编辑`data`字典，其中的数据会被持久化保存
 
     code: The code to execute
 
     expr: The value to be returned
     '''
-    glo = globals()
-    try:
-        exec(code,glo)
-        return repr(eval(expr,glo))
-    except:
-        return traceback.format_exc()
+    dic = globals()
+    exec(code,dic)
+    return repr(eval(expr,dic))
+
+
+
+try:
+    data = json.load(open('data.json','r',encoding='utf-8'))
+except:
+    data = {}
+import atexit
+atexit.register(lambda:json.dump(data, open('data.json','w',encoding='utf-8'),ensure_ascii=False,indent=4))
 
 
 chat.add_tool(get_current_weather)
 # chat.add_tool(get_location)
-# chat.add_tool(exec_code)
+chat.add_tool(exec_code)
 
 # chat.add(chat.req())
 
@@ -61,7 +58,9 @@ print("Enter to confirm")
 print("type ''' to input muti lines")
 print()
 
-chat.set_settings("Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous.")
+chat.set_settings(["Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous.",
+                   lambda s: 'data内的键: '+', '.join(data.keys()) if data.keys() else None
+                   ])
 
 hold = False
 lines = []
