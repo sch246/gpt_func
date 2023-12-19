@@ -27,7 +27,7 @@ from bs4 import BeautifulSoup
 import requests
 def exec_code(code:str, expr:str):
     '''
-    execute a python code. BeautifulSoup and requests are imported. 你应该可以用python读取和编辑`data`字典，其中的数据会被持久化保存
+    execute a real-time python code. BeautifulSoup and requests are imported. 你应该可以用python读取和编辑`data`字典，其中的数据会被持久化保存
 
     code: The code to execute
 
