@@ -205,8 +205,18 @@ class Chat(OpenAI):
         tools = [v.description for v in self.tools.values()]
         model = model if model is not None else self.model
         self.add(message)
-        res_msg = self.add(self.req(tools, tool_choice, model))
-        tool_calls = res_msg.tool_calls
+        stream = self.req(tools, tool_choice, model)
+        try:
+            res_msg = self.add(stream)
+            tool_calls = res_msg.tool_calls
+        except KeyboardInterrupt:
+            if stream.tool_calls:
+                print('\ncanceled\n')
+                return {}
+            else:
+                print('\n')
+                self.messages.append(stream.msg)
+                return stream.msg
         while tool_calls:
             for tool_call in tool_calls:
                 function_name = tool_call.function.name
@@ -220,7 +230,13 @@ class Chat(OpenAI):
                     "content": content,
                     "tool_call_id": tool_call.id,
                 })
-            res_msg = self.add(self.req(tools, tool_choice, model))
+            stream = self.req(tools, tool_choice, model)
+            try:
+                res_msg = self.add(stream)
+            except KeyboardInterrupt:
+                print('\n')
+                self.messages.append(stream.msg)
+                res_msg = stream.msg
             tool_calls = res_msg.tool_calls
         return res_msg
 

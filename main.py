@@ -58,14 +58,22 @@ print("Enter to confirm")
 print("type ''' to input muti lines")
 print()
 
+last_data = None
+def show_data(s):
+    global last_data
+    result = 'data内的键: {'+', '.join([f"{k}: {type(v)}" for k, v in data.items()])+'}' if data!=last_data else None
+    last_data = data.copy()
+    return result
+
 chat.set_settings(["Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous.",
-                   lambda s: 'data内的键: {'+', '.join([f"{k}: {type(v)}" for k, v in data.items()]) if data.keys() else None+'}'
+                   show_data,
                    ])
 
 hold = False
 lines = []
 print('\033[32muser: ',end='',flush=True)
 
+atexit.register(lambda:print('\033[0m\nbye'))
 try:
     while True:
         line = input()
@@ -80,4 +88,4 @@ try:
         chat.call({'role':'user','content':line})
         print('\033[32muser: ',end='',flush=True)
 except KeyboardInterrupt:
-    print('\033[0m\nbye')
+    exit()
