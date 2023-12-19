@@ -59,7 +59,7 @@ print("type ''' to input muti lines")
 print()
 
 chat.set_settings(["Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous.",
-                   lambda s: 'data内的键: '+', '.join(data.keys()) if data.keys() else None
+                   lambda s: 'data内的键: {'+', '.join([f"{k}: {type(v)}" for k, v in data.items()]) if data.keys() else None+'}'
                    ])
 
 hold = False
