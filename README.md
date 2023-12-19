@@ -4,8 +4,8 @@
 测试用例
 
 ```python
-chat = Chat(client,GPT_MODEL)
-chat.set_settings("Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous.")
+chat = Chat()
+chat.set_settings(["Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."])
 
 def get_current_weather(location:str, format:str='celsius'):
     '''
