@@ -47,9 +47,11 @@ import atexit
 atexit.register(lambda:json.dump(data, open('data.json','w',encoding='utf-8'),ensure_ascii=False,indent=4))
 
 
-chat.add_tool(get_current_weather)
+# chat.add_tool(get_current_weather)
 # chat.add_tool(get_location)
-chat.add_tool(exec_code)
+# chat.add_tool(exec_code)
+chat.add_tool(chat.create_image)
+chat.add_tool(chat.read_image)
 
 # chat.add(chat.req())
 

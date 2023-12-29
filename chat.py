@@ -193,7 +193,7 @@ class Chat(OpenAI):
         self.messages.append(msg)
         return msg
 
-    def call(self, message: dict, tool_choice: str = "auto", model: str = None) -> ChatCompletionMessage:
+    def call(self, message: dict = None, tool_choice: str = "auto", model: str = None) -> ChatCompletionMessage:
         """
         Process a message, make tool calls if necessary, and return the response message.
 
@@ -204,7 +204,8 @@ class Chat(OpenAI):
         """
         tools = [v.description for v in self.tools.values()]
         model = model if model is not None else self.model
-        self.add(message)
+        if message is not None:
+            self.add(message)
         stream = self.req(tools, tool_choice, model)
         try:
             res_msg = self.add(stream)
@@ -276,6 +277,60 @@ class Chat(OpenAI):
                 stream=True
             ))
 
+
+    def create_image(self, prompt:str, size:str, quality:str):
+        '''
+        Create an image based on the description and return the url
+        Square, standard quality images are the fastest to generate.
+
+        @param
+        prompt: Description text used to create the image
+        size: Picture size
+            enum: ["1024x1024", "1024x1792", "1792x1024"]
+        quality: Image quality
+            enum: ["standard", "hd"]
+        '''
+        response = self.images.generate(
+            model="dall-e-3",
+            prompt=prompt,
+            size=size,
+            quality=quality,
+            n=1,
+        )
+
+        image_url = response.data[0].url
+        return image_url
+
+    def read_image(self, url:str, detail:str):
+        '''
+        Read information from the image
+
+        @param
+        url: Image url
+        detail: control over how the model processes the image and generates its textual understanding
+            enum: ["low", "high", "auto"]
+        '''
+        response = self.chat.completions.create(
+        model="gpt-4-vision-preview",
+        messages=[
+            {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What’s in this image?"},
+                {
+                "type": "image_url",
+                "image_url": {
+                    "url": url,
+                    "detail": detail,
+                },
+                },
+            ],
+            }
+        ],
+        max_tokens=300,
+        )
+
+        return response.choices[0].message.content
 
 if __name__=='__main__':
     chat = Chat()
