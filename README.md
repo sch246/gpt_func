@@ -11,6 +11,7 @@ def get_current_weather(location:str, format:str='celsius'):
     '''
     Get the current weather
 
+    @param
     location: The city and state, e.g. San Francisco, CA
 
     format: The temperature unit to use. Infer this from the users location.
