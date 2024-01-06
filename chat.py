@@ -1,10 +1,12 @@
 import inspect
 import httpx
-from typing import Callable, List, Dict
+from typing import Any, Callable, List, Dict
 from openai import Stream, resources
 from openai._client import OpenAIWithRawResponse
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
+
+from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
 
 import json
 import traceback
@@ -15,6 +17,8 @@ from openai import OpenAI
 
 from tool import Tool
 
+def dmp(m:ChoiceDeltaToolCall) -> dict[str, Any]:
+    return m.model_dump()
 
 class MessageStream:
     def __init__(self, res:Stream[ChatCompletionChunk]) -> None:
@@ -24,7 +28,7 @@ class MessageStream:
         self.tool_calls = delta.tool_calls
         self.msg = ChatCompletionMessage(
             role=self.role,
-            tool_calls=self.tool_calls,
+            tool_calls=map(dmp, self.tool_calls) if self.tool_calls else None,
             content=None if self.tool_calls else ''
             )
 
