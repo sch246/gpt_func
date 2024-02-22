@@ -2,7 +2,8 @@ import inspect
 import httpx
 from typing import Any, Callable, List, Dict
 from openai import Stream, resources
-from openai._client import OpenAIWithRawResponse
+
+from openai._client import OpenAIWithRawResponse, OpenAIWithStreamedResponse
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 
@@ -108,7 +109,6 @@ def pprint(message:dict | ChatCompletionMessage | MessageStream):
 class Chat(OpenAI):
     completions: resources.Completions
     chat: resources.Chat
-    edits: resources.Edits
     embeddings: resources.Embeddings
     files: resources.Files
     images: resources.Images
@@ -116,9 +116,9 @@ class Chat(OpenAI):
     moderations: resources.Moderations
     models: resources.Models
     fine_tuning: resources.FineTuning
-    fine_tunes: resources.FineTunes
     beta: resources.Beta
     with_raw_response: OpenAIWithRawResponse
+    with_streaming_response: OpenAIWithStreamedResponse
 
     # client options
     api_key: str
@@ -129,7 +129,7 @@ class Chat(OpenAI):
     messages: List[Dict]
     settings: List[Dict]
     def __init__(self,
-            model: str = "gpt-4-1106-preview",
+            model: str = "gpt-4-0125-preview",
             settings:List[str|Callable]=[],
             api_key: str | None = None,
             base_url: str | httpx.URL | None = None,
